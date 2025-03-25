@@ -1,5 +1,4 @@
 import scrapy
-import re
 
 class ClashDailySpider(scrapy.Spider):
     name = "clashdaily"
@@ -8,7 +7,7 @@ class ClashDailySpider(scrapy.Spider):
 
     def parse(self, response):
         # Extract current page number
-        page_number = self.get_page_number(response.url)
+        page_number = self.extract_page_number(response.url)
         
         # Extract all article links from different sections
         article_links = response.css("h2.post-title a::attr(href)").getall()
@@ -18,9 +17,9 @@ class ClashDailySpider(scrapy.Spider):
             if link:
                 yield response.follow(link.strip(), self.parse_article, meta={"page_number": page_number})
         
-        # Follow next pages up to page 1919
-        if page_number < 1919:
-            next_page = f"https://clashdaily.com/page/{page_number + 1}/"
+        # Extract pagination links and follow next pages
+        next_page = response.css("a.pages-nav-item[title]:last-of-type::attr(href)").get()
+        if next_page:
             yield response.follow(next_page, self.parse, meta={"page_number": page_number + 1})
 
     def parse_article(self, response):
@@ -31,6 +30,10 @@ class ClashDailySpider(scrapy.Spider):
             "page_number": response.meta.get("page_number", 1)
         }
     
-    def get_page_number(self, url):
-        match = re.search(r"page/(\d+)/", url)
-        return int(match.group(1)) if match else 1
+    def extract_page_number(self, url):
+        parts = url.rstrip("/").split("/")
+        if "page" in parts:
+            index = parts.index("page")
+            if index + 1 < len(parts) and parts[index + 1].isdigit():
+                return int(parts[index + 1])
+        return 1
