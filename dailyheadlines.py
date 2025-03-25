@@ -5,7 +5,7 @@ class Scraper(scrapy.Spider):
     base_url = "https://dailyheadlines.net"
     start_page = 1
     max_pages = 1000  # Adjust as needed
-
+    
     def start_requests(self):
         for page_num in range(self.start_page, self.max_pages + 1):
             page_url = f"{self.base_url}/page/{page_num}/"
