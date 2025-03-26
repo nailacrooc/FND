@@ -4,7 +4,7 @@ class Scraper(scrapy.Spider):
     name = "100_percent_fedup"
     base_url = "https://100percentfedup.com"
     start_page = 1
-    max_pages = 1  # Adjust as needed
+    max_pages = 634  # Adjust as needed
 
     def start_requests(self):
         for page_num in range(self.start_page, self.max_pages + 1):
