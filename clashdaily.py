@@ -1,39 +1,49 @@
 import scrapy
 
 class ClashDailySpider(scrapy.Spider):
-    name = "clashdaily"
-    allowed_domains = ["clashdaily.com"]
-    start_urls = ["https://clashdaily.com/page/1/"]
+    name = "clashdaily_scraper"
+    base_url = "https://clashdaily.com"
+    start_page = 1
+    max_pages = 432  # Adjust as needed
 
-    def parse(self, response):
-        # Extract current page number
-        page_number = self.extract_page_number(response.url)
+    def start_requests(self):
+        for page_num in range(self.start_page, self.max_pages + 1):
+            page_url = f"{self.base_url}/page/{page_num}/"
+            self.logger.info(f"Scraping page: {page_url}")
+            yield scrapy.Request(url=page_url, callback=self.parse_page)
+
+    def parse_page(self, response):
+        articles = response.css("h2.post-title a, h2.thumb-title a")
         
-        # Extract all article links from different sections
-        article_links = response.css("h2.post-title a::attr(href)").getall()
-        thumb_links = response.css("h2.thumb-title a::attr(href)").getall()
-        
-        for link in set(article_links + thumb_links):  # Remove duplicates
-            if link:
-                yield response.follow(link.strip(), self.parse_article, meta={"page_number": page_number})
-        
-        # Extract pagination links and follow next pages
-        next_page = response.css("a.pages-nav-item[title]:last-of-type::attr(href)").get()
-        if next_page:
-            yield response.follow(next_page, self.parse, meta={"page_number": page_number + 1})
+        for article in articles:
+            title = article.css("::text").get()
+            link = article.css("::attr(href)").get()
+
+            if title and link:
+                self.logger.info(f"Found Article: {title} ({link})")
+                yield scrapy.Request(
+                    url=link.strip(),
+                    callback=self.parse_article,
+                    meta={"title": title.strip(), "link": link.strip()}
+                )
 
     def parse_article(self, response):
+        title = response.meta["title"]
+        link = response.meta["link"]
+
+        content_elements = response.css("div.entry-content p::text").getall()
+        content = "\n".join([text.strip() for text in content_elements if text.strip()])
+
+        if not content:
+            self.logger.warning(f"No content found for: {title} ({link})")
+            with open("debug_response.html", "w", encoding="utf-8") as f:
+                f.write(response.text)
+                self.logger.info("Saved response text for debugging.")
+
+        self.logger.info(f"Scraped Article: {title}\n{content[:200]}...\n{'-'*80}")
+
         yield {
-            "title": response.css("h1.post-title::text").get(default="").strip(),
-            "content": "\n".join(response.css("div.entry-content p::text").getall()).strip(),
-            "thumb_title": response.css("h2.thumb-title::text").get(default="").strip(),
-            "page_number": response.meta.get("page_number", 1)
+            "Title": title,
+            "URL": link,
+            "Content": content
         }
-    
-    def extract_page_number(self, url):
-        parts = url.rstrip("/").split("/")
-        if "page" in parts:
-            index = parts.index("page")
-            if index + 1 < len(parts) and parts[index + 1].isdigit():
-                return int(parts[index + 1])
-        return 1
