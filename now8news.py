@@ -60,3 +60,4 @@ class Scraper(scrapy.Spider):
 
     def close(self, reason):
         pass
+    
