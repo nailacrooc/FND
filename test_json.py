@@ -81,6 +81,12 @@ def predict_categories(new_file_path, category_mapping):
     # Map topic indices back to category names using the passed category_mapping
     new_df["predicted_category"] = [category_mapping[i] for i in predicted_categories]
 
+    # Update categories to "Others" if not Politics, Health, or Entertainment
+    valid_categories = ["politics", "health", "entertainment"]
+    new_df["predicted_category"] = new_df["predicted_category"].apply(
+        lambda x: x if x in valid_categories else "Others"
+    )
+
     # Save predictions to a new CSV file
     new_df.to_csv("predicted_categories.csv", index=False)
 
