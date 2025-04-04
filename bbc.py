@@ -7,10 +7,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 # Load your dataset
 dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-1/bbc-text.csv")
 
-# Print the first few rows and the column names to inspect your dataset
-print(dataset.head())
-print(dataset.columns)
-
 # Define the feature (text) and target (category)
 X = dataset['text']  # Use the 'text' column as the feature
 y = dataset['category']  # Use the 'category' column as the target
@@ -44,3 +40,23 @@ print(f'Precision: {precision}')
 print(f'Recall: {recall}')
 print(f'F1 Score: {f1}')
 print(f'Confusion Matrix:\n{conf_matrix}')
+
+# ---- USER INPUT PREDICTION ----
+def predict_category():
+    user_input = input("\nEnter a news article: ")  # Get user input
+    
+    # Transform user input using the same TF-IDF vectorizer
+    user_input_tfidf = vectorizer.transform([user_input])
+    
+    # Predict the category
+    predicted_category = model.predict(user_input_tfidf)[0]
+    
+    # Limit categories to Politics, Health, or Entertainment; else mark as 'Others'
+    allowed_categories = {'politics', 'health', 'entertainment'}
+    final_category = predicted_category if predicted_category in allowed_categories else 'others'
+    
+    # Output the predicted category
+    print(f"\nPredicted Category: {final_category}")
+
+# Call the function to take user input and predict
+predict_category()
