@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Load your dataset
-dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND/bbc-text.csv")
+dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-1/bbc-text.csv")
 
 # Print the first few rows and the column names to inspect your dataset
 print(dataset.head())
