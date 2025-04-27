@@ -30,7 +30,7 @@ def preprocess_text(text):
     filtered = [word for word in tokens if word not in stop_words]
     return ' '.join(filtered)
 
-# ---- Load Training Dataset ----
+# ---- Load Dataset ----
 dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-2/bbc-text3.csv")
 
 # ---- Preprocess Text ----
@@ -58,23 +58,13 @@ y_pred = model.predict(X_test)
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=model.classes_))
 
-# ---- Predict Categories from CSV (Hardcoded Path) ----
-def predict_from_csv():
-    input_path = "C:/Users/johnj/ScrapyTest/ScrapyTest/FND-2/TEST FOR BBC.csv"  # 👈 Your CSV file path here
-    try:
-        input_df = pd.read_csv(input_path, encoding='ISO-8859-1')  # Or try 'cp1252' if that fails
-        if 'text' not in input_df.columns:
-            print("The input CSV must contain a 'text' column.")
-            return
-        input_df['cleaned_text'] = input_df['text'].astype(str).apply(preprocess_text)
-        input_vectors = vectorizer.transform(input_df['cleaned_text'])
-        predictions = model.predict(input_vectors)
-        input_df['predicted_category'] = predictions
-        output_path = input_path.replace(".csv", "_with_predictions.csv")
-        input_df.to_csv(output_path, index=False)
-        print(f"Predictions added. Output saved to: {output_path}")
-    except Exception as e:
-        print(f"Error: {e}")
+# ---- User Input Prediction ----
+def predict_category():
+    user_input = input("\nEnter a news article: ")
+    cleaned_input = preprocess_text(user_input)
+    input_vector = vectorizer.transform([cleaned_input])
+    prediction = model.predict(input_vector)[0]
+    print(f"Predicted Category: {prediction}")
 
 # ---- Run ----
-predict_from_csv()
+predict_category()
