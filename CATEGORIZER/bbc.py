@@ -53,11 +53,6 @@ X_train, X_test, y_train, y_test = train_test_split(X_tfidf, y, test_size=0.2, r
 model = SVC(kernel='linear', probability=True, random_state=42)
 model.fit(X_train, y_train)
 
-# ---- Evaluate Model ----
-y_pred = model.predict(X_test)
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred, target_names=model.classes_))
-
 # ---- User Input Prediction ----
 def predict_category():
     user_input = input("\nEnter a news article: ")
@@ -70,6 +65,11 @@ def predict_category():
     confidence = probabilities[predicted_index] * 100
     
     print(f"\nYOUR INPUTTED NEWS CATEGORY IS {confidence:.2f}% {prediction.upper()}")
+    
+    # Evaluate model again after prediction
+    y_pred = model.predict(X_test)
+    print("\n--- Model Evaluation Metrics ---")
+    print(classification_report(y_test, y_pred, target_names=model.classes_))
 
 # ---- Run ----
 predict_category()
