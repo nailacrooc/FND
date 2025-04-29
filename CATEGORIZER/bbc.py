@@ -31,7 +31,7 @@ def preprocess_text(text):
     return ' '.join(filtered)
 
 # ---- Load Dataset ----
-dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-2/CATEGORIZER/bbc-text3.csv")
+dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL29/FND/CATEGORIZER/Test-AGA.csv")
 
 # ---- Preprocess Text ----
 dataset['text'] = dataset['text'].astype(str).apply(preprocess_text)
@@ -49,27 +49,22 @@ X_tfidf = vectorizer.fit_transform(X)
 # ---- Train/Test Split ----
 X_train, X_test, y_train, y_test = train_test_split(X_tfidf, y, test_size=0.2, random_state=42)
 
-# ---- Train SVM Model (Updated with probability=True) ----
-model = SVC(kernel='linear', probability=True, random_state=42)
+# ---- Train SVM Model ----
+model = SVC(kernel='linear', random_state=42)
 model.fit(X_train, y_train)
+
+# ---- Evaluate Model ----
+y_pred = model.predict(X_test)
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred, target_names=model.classes_))
 
 # ---- User Input Prediction ----
 def predict_category():
     user_input = input("\nEnter a news article: ")
     cleaned_input = preprocess_text(user_input)
     input_vector = vectorizer.transform([cleaned_input])
-    
     prediction = model.predict(input_vector)[0]
-    probabilities = model.predict_proba(input_vector)[0]
-    predicted_index = list(model.classes_).index(prediction)
-    confidence = probabilities[predicted_index] * 100
-    
-    print(f"\nYOUR INPUTTED NEWS CATEGORY IS {confidence:.2f}% {prediction.upper()}")
-    
-    # Evaluate model again after prediction
-    y_pred = model.predict(X_test)
-    print("\n--- Model Evaluation Metrics ---")
-    print(classification_report(y_test, y_pred, target_names=model.classes_))
+    print(f"Predicted Category: {prediction}")
 
 # ---- Run ----
 predict_category()
