@@ -33,7 +33,7 @@ def preprocess_text(text):
     return ' '.join(filtered)
 
 # ---- Load Training Dataset ----
-dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL29/FND/CATEGORIZER/AGA-DINO-LATEST.csv")
+dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL30/FND/CATEGORIZER/news-article-categories.csv")
 
 # ---- Preprocess Text ----
 dataset['text'] = dataset['text'].astype(str).apply(preprocess_text)
@@ -60,8 +60,11 @@ y_pred = model.predict(X_test)
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=model.classes_))
 
+# ---- Confidence Threshold for "others" Category ----
+OTHERS_CONFIDENCE_THRESHOLD = 0.6  # You can tune this value
+
 # ---- Predict Categories with Confidence for a New CSV File ----
-def categorize_csv_file(input_csv_path, output_csv_path):
+def categorize_csv_file(input_csv_path, output_csv_path, threshold=OTHERS_CONFIDENCE_THRESHOLD):
     # Load the new CSV file with fallback encoding
     new_data = pd.read_csv(input_csv_path, encoding='ISO-8859-1')
 
@@ -85,10 +88,17 @@ def categorize_csv_file(input_csv_path, output_csv_path):
     for i, category in enumerate(model.classes_):
         new_data[f'confidence_{category}'] = confidence_scores[:, i]
 
-    # Predict categories
-    predicted_categories = model.predict(new_tfidf)
+    # Predict categories with confidence threshold for "others"
+    predicted_categories = []
+    for i in range(confidence_scores.shape[0]):
+        row_conf = confidence_scores[i]
+        max_conf_idx = np.argmax(row_conf)
+        max_conf = row_conf[max_conf_idx]
+        if max_conf < threshold:
+            predicted_categories.append("others")
+        else:
+            predicted_categories.append(model.classes_[max_conf_idx])
 
-    # Add predictions as a new column
     new_data['predicted_category'] = predicted_categories
 
     # Save to a new CSV file
@@ -98,8 +108,6 @@ def categorize_csv_file(input_csv_path, output_csv_path):
 # ---- Run Categorization on New File ----
 # CHANGE THESE PATHS TO MATCH YOUR FILE LOCATIONS
 categorize_csv_file(
-    input_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL29/FND/CATEGORIZER/random news.csv",
-    output_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL29/FND/CATEGORIZER/random-news-category-confidence.csv"
+    input_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL30/FND/CATEGORIZER/TEST-mga-others.csv",
+    output_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL30/FND/CATEGORIZER/TEST-mga-others-confidence.csv"
 )
-
-#test
