@@ -4,7 +4,7 @@ class Scraper(scrapy.Spider):
     name = "empire_health"
     allowed_domains = ["empirenews.net"]
     start_urls = ["https://empirenews.net/category/healthfitness/"]
-    max_pages = 50  # Set a reasonable max page limit
+    max_pages = 2  # Set a reasonable max page limit
     page_count = 0
 
     def parse(self, response):
@@ -39,7 +39,7 @@ class Scraper(scrapy.Spider):
             published_date = response.xpath('//time/text()').get()
 
         # Extract article paragraphs
-        paragraphs = response.xpath('//div[@class="td-post-content"]//p//text()').getall()
+        paragraphs = response.xpath('//p//text()').getall()
         paragraphs = [p.strip() for p in paragraphs if p.strip()]
 
         # Clean up: remove first paragraph and last 5 (often boilerplate or ads)
