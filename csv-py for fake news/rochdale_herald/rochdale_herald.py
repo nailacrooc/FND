@@ -4,7 +4,7 @@ import re
 
 class Scraper(scrapy.Spider):
     name = "rochdale_herald"
-    base_url = "https://rochdaleherald.co.uk/other/politics/"
+    base_url = "https://rochdaleherald.co.uk/other/sport/"
     start_page = 1
     max_pages = 1  # Adjust this to crawl more pages
 
