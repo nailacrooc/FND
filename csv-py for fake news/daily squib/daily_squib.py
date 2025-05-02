@@ -2,9 +2,9 @@ import scrapy
 
 class Scraper(scrapy.Spider):
     name = "the_poke"
-    base_url = "https://www.dailysquib.co.uk/category/entertainment"
+    base_url = "https://www.dailysquib.co.uk/category/health"
     start_page = 1
-    max_pages = 1  # Increase this to crawl more pages
+    max_pages = 4  # Increase this to crawl more pages
 
     def start_requests(self):
         for page_num in range(self.start_page, self.max_pages + 1):
