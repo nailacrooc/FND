@@ -24,17 +24,14 @@ class Scraper(scrapy.Spider):
         xpath_tdi_55 = '//div[@id="tdi_55" and contains(@class, "td_block_inner")]'
 
         # Collect <a> elements from both containers, excluding any inside pagination
-        articles_tdi_65 = response.xpath(f'{xpath_tdi_65}//a[not(ancestor::div[contains(@class, "page-nav")])]')
+        articles_tdi_65 = response.xpath(f'{xpath_tdi_65}//a[not(ancestor::div[contains(@class, "page-nav")])]')        
         articles_tdi_55 = response.xpath(f'{xpath_tdi_55}//a[not(ancestor::div[contains(@class, "page-nav")])]')
 
         all_articles = articles_tdi_65 + articles_tdi_55
 
         for article in all_articles:
             headline = article.xpath('.//text()').get()
-            if headline:
-                headline = headline.strip()
-            else:
-                headline = None
+            headline = headline.strip() if headline else None
 
             link = article.xpath('./@href').get()
 
@@ -53,36 +50,40 @@ class Scraper(scrapy.Spider):
         headline = response.meta["headline"]
         link = response.meta["link"]
 
-        # Try to extract headline from h3 in tdi_65
+        # Extract headline from h3 inside tdi_65 if available
         headline_from_h3 = response.xpath('//div[@id="tdi_65"]//h3//text()').get()
         if headline_from_h3:
             headline_from_h3 = headline_from_h3.strip()
 
-        # ✅ Extract <p> tags and decide whether to keep on same line or new line
+        # Get all direct <p> elements under the specified container
         paragraphs = response.xpath(
             '//div[contains(@class, "tdb-block-inner") and contains(@class, "td-fix-index")]/p'
         )
 
         content = []
-        for p in paragraphs:
-            # Check if <p> tag contains nested elements (like <span>, <a>, etc.)
-            nested_elements = p.xpath('.//*[not(self::p)]')  # Get nested elements excluding other <p>
-            
-            # If there are nested elements, keep the text on the same line
+        for index, p in enumerate(paragraphs):
+            if index == 0:
+                continue  # Skip the first <p>
+
+            # Skip if any nested element contains "Read More"
+            if p.xpath('.//*[contains(text(), "Read More")]'):
+                continue
+
+            nested_elements = p.xpath('.//*[not(self::p)]')
+
+            # Handle text accordingly
             if nested_elements:
                 text = " ".join(p.xpath('.//text()').getall()).strip()
-                if text:
-                    content.append(text)  # Continue on same line
             else:
-                # Otherwise, treat it as a new line
                 text = p.xpath('.//text()').get()
-                if text:
-                    content.append(text.strip())  # New line for non-nested <p> tags
+                text = text.strip() if text else ""
 
-        # Join content with newlines separating plain <p> tags and no newline between nested ones
+            if text:
+                content.append(text)
+
         content_text = "\n".join(content)
 
-        # Extract year from time tag
+        # Extract year from datetime
         year = response.xpath('//time[contains(@class, "entry-date updated td-module-date")]/@datetime').get()
         if year:
             year = year[:4]
