@@ -4,7 +4,7 @@ class BookmarkSpider(scrapy.Spider):
     name = "bookmark_spider"
     allowed_domains = ["adobochronicles.com"]
     start_urls = ["https://adobochronicles.com/category/entertainment/"]
-    max_pages = 150
+    max_pages = 83
     page_count = 0
 
     def parse(self, response):
@@ -23,15 +23,26 @@ class BookmarkSpider(scrapy.Spider):
 
     def parse_article(self, response):
         title = response.css('h1.entry-title::text').get()
-        paragraphs = response.css('article p::text').getall()
-        full_text = ' '.join(p.strip() for p in paragraphs if p.strip())
 
-        # Extract published date (adjust selector if necessary)
+        # Get all text content inside <p> tags including nested tags (like <em>, <strong>, <a>)
+        paragraphs = response.xpath('//article//p//text()').getall()
+
+        # Skip article if no meaningful <p> content is found
+        if not paragraphs or not any(p.strip() for p in paragraphs):
+            return
+
+        full_text = ' '.join(p.strip() for p in paragraphs if p.strip())
         published_date = response.css('time.entry-date::attr(datetime)').get()
+
+        # Extract category tags from span.cat-links
+        category_tags = response.css('span.cat-links a[rel="category tag"]::text').getall()
+        category_tags = [tag.strip() for tag in category_tags if tag.strip()]
+        category_string = ', '.join(category_tags)
 
         yield {
             "title": title.strip() if title else "",
             "url": response.url,
             "text": full_text,
-            "published_date": published_date.strip() if published_date else ""
+            "published_date": published_date.strip() if published_date else "",
+            "categories": category_string
         }
