@@ -4,7 +4,7 @@ class Scraper(scrapy.Spider):
     name = "empire_health"
     allowed_domains = ["empirenews.net"]
     start_urls = ["https://empirenews.net/category/healthfitness/"]
-    max_pages = 2  # Set a reasonable max page limit
+    max_pages = 200  # Set a reasonable max page limit
     page_count = 0
 
     def parse(self, response):
