@@ -31,19 +31,19 @@ class PoliticsLinksSpider(scrapy.Spider):
                 yield response.follow(next_page, self.parse)
 
     def parse_article(self, response):
-        # Get <p> tags with no class, not in blockquote or footer
-        p_tags = response.xpath(
-            '//p[not(@class) and '
-            'not(ancestor::div[@id="bkg_footer"]) and '
-            'not(ancestor::blockquote)]/text()'
-        ).getall()
+        # Extract headline (assumes <h1> is used)
+        headline = response.css('h1::text').get()
+        headline = headline.strip() if headline else ''
 
+        # Extract only <p> tags under <div class="entry normal js-article-body">
+        p_tags = response.css('div.entry.normal.js-article-body > p::text').getall()
         p_tags = [p.strip() for p in p_tags if p.strip()]
 
         if p_tags:
-            p_tags = p_tags[:-1]  # Remove last paragraph
+            p_tags = p_tags[:-1]  # Optional: remove last paragraph
 
         yield {
+            'headline': headline,
             'url': response.url,
             'content': ' '.join(p_tags)
         }
