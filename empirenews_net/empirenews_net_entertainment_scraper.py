@@ -3,8 +3,8 @@ import scrapy
 class Scraper(scrapy.Spider):
     name = "empire_entertainment"
     allowed_domains = ["empirenews.net"]
-    start_urls = ["https://empirenews.net/category/entertainment/"]
-    max_pages = 50  # Adjust as needed
+    start_urls = ["https://empirenews.net/category/entertainment/page/50/"]
+    max_pages = 100  # Adjust as needed
     page_count = 0
 
     def parse(self, response):
