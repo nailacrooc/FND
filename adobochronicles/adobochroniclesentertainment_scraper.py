@@ -4,7 +4,7 @@ class BookmarkSpider(scrapy.Spider):
     name = "bookmark_spider"
     allowed_domains = ["adobochronicles.com"]
     start_urls = ["https://adobochronicles.com/category/entertainment/"]
-    max_pages = 83
+    max_pages = 175
     page_count = 0
 
     def parse(self, response):

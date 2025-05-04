@@ -4,7 +4,7 @@ class HealthMedicineSpider(scrapy.Spider):
     name = "health_medicine_spider"
     allowed_domains = ["adobochronicles.com"]
     start_urls = ["https://adobochronicles.com/category/health-medicine/"]
-    max_pages = 63
+    max_pages = 200
     page_count = 0
 
     def parse(self, response):
