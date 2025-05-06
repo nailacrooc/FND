@@ -4,7 +4,7 @@ class Scraper(scrapy.Spider):
     name = "get_real_ph"
     base_url = "https://www.getrealphilippines.com/category/politics"
     start_page = 1
-    max_pages = 70  # You can increase this if needed
+    max_pages = 325  # You can increase this if needed
 
     custom_settings = {
         'ROBOTSTXT_OBEY': False,  # Allow crawling even if robots.txt fails
