@@ -1,0 +1,53 @@
+import scrapy
+
+class BookmarkSpider(scrapy.Spider):
+    name = "bookmark_spider"
+    allowed_domains = ["adobochronicles.com"]
+    start_urls = ["https://adobochronicles.com/"]
+    max_pages = 1200  # Adjust as needed
+    page_count = 0
+    excluded_categories = {"politics", "health", "entertainment"}
+
+    def parse(self, response):
+        self.page_count += 1
+
+        article_links = response.css('a[rel="bookmark"]::attr(href)').getall()
+        for link in article_links:
+            yield response.follow(link, callback=self.parse_article)
+
+        if self.page_count < self.max_pages:
+            next_page = response.css('a.next::attr(href)').get()
+            if next_page:
+                yield response.follow(next_page, callback=self.parse)
+
+    def parse_article(self, response):
+        title = response.css('h1.entry-title::text').get()
+        paragraphs = response.xpath('//article//p//text()').getall()
+
+        if not paragraphs or not any(p.strip() for p in paragraphs):
+            return
+
+        full_text = ' '.join(p.strip() for p in paragraphs if p.strip())
+
+        # Filter out articles with fewer than 20 words
+        if len(full_text.split()) < 20:
+            return
+
+        published_date = response.css('time.entry-date::attr(datetime)').get()
+
+        category_tags = response.css('span.cat-links a[rel="category tag"]::text').getall()
+        category_tags = [tag.strip().lower() for tag in category_tags if tag.strip()]
+
+        # Skip articles with any excluded category
+        if any(cat in self.excluded_categories for cat in category_tags):
+            return
+
+        category_string = ', '.join(category_tags)
+
+        yield {
+            "title": title.strip() if title else "",
+            "url": response.url,
+            "text": full_text,
+            "published_date": published_date.strip() if published_date else "",
+            "categories": category_string
+        }
