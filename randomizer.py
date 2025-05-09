@@ -14,6 +14,6 @@ def shuffle_csv_rows(input_file, output_file):
 
 if __name__ == "__main__":
     # Example usage
-    input_csv = "ENTERTAINMENT.csv"       # Replace with your actual CSV file
-    output_csv = "ENTERTAINMENT_shuffled.csv"   # Output file name
+    input_csv = "ALL_shuffled.csv"       # Replace with your actual CSV file
+    output_csv = "ALL_shuffled_na.csv"   # Output file name
     shuffle_csv_rows(input_csv, output_csv)
