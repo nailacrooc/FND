@@ -1,113 +1,111 @@
 import pandas as pd
+import numpy as np
 import re
 import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import PunktSentenceTokenizer
 from nltk.sentiment import SentimentIntensityAnalyzer
-import numpy as np
-from scipy.special import expit  # For sigmoid function
-
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
+from scipy.sparse import hstack, csr_matrix
+from scipy.special import expit
 
-# ---- Properly Download NLTK Resources ----
-nltk.download('punkt')
+# ---- Download NLTK Resources ----
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
 
-# ---- NLTK Setup ----
+# ---- Setup ----
 stop_words = set(stopwords.words('english'))
 sia = SentimentIntensityAnalyzer()
-tokenizer = PunktSentenceTokenizer()
 
-# ---- Preprocessing Function ----
 def preprocess_text(text):
-    if pd.isnull(text):
-        return ""
-    text = text.lower()
+    text = str(text).lower()
     text = re.sub(r'[^a-z\s]', '', text)
-    tokens = tokenizer.tokenize(text)
-    filtered = [word for word in tokens if word not in stop_words]
-    return ' '.join(filtered)
+    tokens = text.split()
+    return ' '.join([word for word in tokens if word not in stop_words])
 
-# ---- Load Training Dataset ----
-dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL30/FND/CATEGORIZER/news-article-categories.csv")
+def extract_sentiment(text):
+    scores = sia.polarity_scores(text)
+    return [scores['neg'], scores['neu'], scores['pos'], scores['compound']]
 
-# ---- Preprocess Text ----
-dataset['text'] = dataset['text'].astype(str).apply(preprocess_text)
+# ---- Load and Prepare Training Data ----
+train_df = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-MAY1/FND/ALL_shuffled_na.csv")
+train_df = train_df.sample(frac=1, random_state=42)
+train_df['Content'] = train_df['Content'].astype(str).apply(preprocess_text)
+train_df['Category'] = train_df['Category'].apply(lambda x: x if x in ['politics', 'entertainment', 'health'] else 'others')
 
-# ---- Keep only relevant categories ----
-main_categories = {'politics', 'entertainment', 'health'}
-dataset['category'] = dataset['category'].apply(lambda x: x if x in main_categories else 'others')
+# Sentiment + TF-IDF
+sentiment_features = train_df['Content'].apply(lambda x: pd.Series(extract_sentiment(x)))
+sentiment_sparse = csr_matrix(sentiment_features.values)
+vectorizer = TfidfVectorizer(max_features=10000)
+X_tfidf = vectorizer.fit_transform(train_df['Content'])
+X_combined = hstack([X_tfidf, sentiment_sparse])
 
-# ---- TF-IDF Vectorization ----
-X = dataset['text']
-y = dataset['category']
-vectorizer = TfidfVectorizer()
-X_tfidf = vectorizer.fit_transform(X)
+# Encode labels
+label_encoder = LabelEncoder()
+y = label_encoder.fit_transform(train_df['Category'])
 
-# ---- Train/Test Split ----
-X_train, X_test, y_train, y_test = train_test_split(X_tfidf, y, test_size=0.2, random_state=42)
+# Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(X_combined, y, test_size=0.2, random_state=42)
 
-# ---- Train SVM Model ----
-model = SVC(kernel='linear', random_state=42)
-model.fit(X_train, y_train)
+# Dimensionality Reduction
+svd = TruncatedSVD(n_components=200, random_state=42)
+X_train_svd = svd.fit_transform(X_train)
+X_test_svd = svd.transform(X_test)
 
-# ---- Evaluate Model ----
-y_pred = model.predict(X_test)
+lda = LinearDiscriminantAnalysis()
+X_train_lda = lda.fit_transform(X_train_svd, y_train)
+X_test_lda = lda.transform(X_test_svd)
+
+# Train SVM
+model = SVC(kernel='linear', random_state=42, probability=True)
+model.fit(X_train_lda, y_train)
+
+# Evaluation
+y_pred = model.predict(X_test_lda)
 print("\nClassification Report:")
-print(classification_report(y_test, y_pred, target_names=model.classes_))
+print(classification_report(y_test, y_pred, target_names=label_encoder.classes_))
 
-# ---- Confidence Threshold for "others" Category ----
-OTHERS_CONFIDENCE_THRESHOLD = 0.6  # You can tune this value
+# ---- Predict Function for CSV with ONLY "Content" Column ----
+def predict_from_content_csv(input_csv_path, output_csv_path):
+    df = pd.read_csv(input_csv_path, encoding='ISO-8859-1')
 
-# ---- Predict Categories with Confidence for a New CSV File ----
-def categorize_csv_file(input_csv_path, output_csv_path, threshold=OTHERS_CONFIDENCE_THRESHOLD):
-    # Load the new CSV file with fallback encoding
-    new_data = pd.read_csv(input_csv_path, encoding='ISO-8859-1')
+    # Take only the first column and rename it to 'Content'
+    df = df.iloc[:, [0]].copy()
+    df.columns = ['Content']
 
-    # Check if 'text' column exists
-    if 'text' not in new_data.columns:
-        raise ValueError("The input CSV must contain a 'text' column.")
+    # Preprocess
+    df['Content'] = df['Content'].astype(str).apply(preprocess_text)
 
-    # Preprocess the text column
-    new_data['text'] = new_data['text'].astype(str).apply(preprocess_text)
+    # Extract features
+    sentiment_features = df['Content'].apply(lambda x: pd.Series(extract_sentiment(x)))
+    sentiment_sparse = csr_matrix(sentiment_features.values)
+    X_tfidf_new = vectorizer.transform(df['Content'])
+    X_combined_new = hstack([X_tfidf_new, sentiment_sparse])
+    X_svd_new = svd.transform(X_combined_new)
+    X_lda_new = lda.transform(X_svd_new)
 
-    # Transform using the trained TF-IDF vectorizer
-    new_tfidf = vectorizer.transform(new_data['text'])
+    # Predict
+    y_pred_new = model.predict(X_lda_new)
+    confidence_scores = model.predict_proba(X_lda_new)
+    
+    # Calculate the confidence score for each prediction (highest confidence)
+    max_confidence = np.max(confidence_scores, axis=1)
 
-    # Get decision function scores for each class
-    decision_scores = model.decision_function(new_tfidf)
+    # Add predictions and confidence scores to the dataframe
+    df['predicted_category'] = label_encoder.inverse_transform(y_pred_new)
+    df['confidence_score'] = max_confidence
 
-    # Apply the sigmoid function to get confidence scores (probability-like scores)
-    confidence_scores = expit(decision_scores)  # Sigmoid for probabilities
+    # Save output
+    df.to_csv(output_csv_path, index=False)
+    print(f"\nPredictions and confidence scores saved to: {output_csv_path}")
 
-    # Create columns for confidence scores per category
-    for i, category in enumerate(model.classes_):
-        new_data[f'confidence_{category}'] = confidence_scores[:, i]
-
-    # Predict categories with confidence threshold for "others"
-    predicted_categories = []
-    for i in range(confidence_scores.shape[0]):
-        row_conf = confidence_scores[i]
-        max_conf_idx = np.argmax(row_conf)
-        max_conf = row_conf[max_conf_idx]
-        if max_conf < threshold:
-            predicted_categories.append("others")
-        else:
-            predicted_categories.append(model.classes_[max_conf_idx])
-
-    new_data['predicted_category'] = predicted_categories
-
-    # Save to a new CSV file
-    new_data.to_csv(output_csv_path, index=False)
-    print(f"\nPredicted categories with confidence values saved to: {output_csv_path}")
-
-# ---- Run Categorization on New File ----
-# CHANGE THESE PATHS TO MATCH YOUR FILE LOCATIONS
-categorize_csv_file(
-    input_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL30/FND/CATEGORIZER/TEST-mga-others.csv",
-    output_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL30/FND/CATEGORIZER/TEST-mga-others-confidence.csv"
+# ---- Example Run ----
+predict_from_content_csv(
+    input_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-MAY1/FND/Test-Random-News.csv",
+    output_csv_path="C:/Users/johnj/ScrapyTest/ScrapyTest/FND-MAY1/FND/Test-Random-News-output.csv"
 )

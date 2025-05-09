@@ -33,18 +33,18 @@ def preprocess_text(text):
     return ' '.join(filtered)
 
 # ---- Load Dataset ----
-dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-APRIL29/FND/CATEGORIZER/AGA-DINO-LATEST.csv")
+dataset = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-MAY1/FND/ALL_shuffled_na.csv")
 
 # ---- Preprocess Text ----
-dataset['text'] = dataset['text'].astype(str).apply(preprocess_text)
+dataset['Content'] = dataset['Content'].astype(str).apply(preprocess_text)
 
 # ---- Keep only relevant categories ----
 main_categories = {'politics', 'entertainment', 'health'}
-dataset['category'] = dataset['category'].apply(lambda x: x if x in main_categories else 'others')
+dataset['Category'] = dataset['Category'].apply(lambda x: x if x in main_categories else 'others')
 
 # ---- TF-IDF Vectorization ----
-X = dataset['text']
-y = dataset['category']
+X = dataset['Content']
+y = dataset['Category']
 vectorizer = TfidfVectorizer()
 X_tfidf = vectorizer.fit_transform(X)
 
