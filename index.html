@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fake News Detector</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f9f9f9;
+            text-align: center;
+            padding: 40px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 160px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            resize: none;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 25px;
+            background-color: #83b3ee;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #83b3ee;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .confidence-box {
+            background-color: #83b3ee;
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-size: 26px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .label {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📰 SVM Fake News Detector</h1>
+        <form action="/predict" method="post">
+            <textarea name="article" placeholder="Paste your news article here..." required>{{ article if article else '' }}</textarea>
+            <br>
+            <button type="submit">Analyze</button>
+        </form>
+
+        {% if category_pred %}
+        <div class="results">
+            <div class="confidence-box">{{ category_conf }}%</div>
+            <div class="label">{{ category_pred.upper() }}</div>
+            <div class="confidence-box">{{ fake_conf }}%</div>
+            <div class="label">{{ fake_pred.upper() }}</div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
