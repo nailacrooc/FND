@@ -45,7 +45,7 @@ def preprocess_text(text):
 def train_entertainment_model():
     print("Training new entertainment model...")
 
-    df = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-MAY1/FND/ENTERTAINMENT-cleaned.csv", encoding="ISO-8859-1", on_bad_lines="skip")
+    df = pd.read_csv("C:/Users/johnj/ScrapyTest/ScrapyTest/FND-LATEST/FND/ENTERTAINMENT-cleaned.csv", encoding="ISO-8859-1", on_bad_lines="skip")
     df = df.dropna(subset=['Label'])
     df['combined_text'] = df['Headline'].fillna('') + " " + df['Content'].fillna('')
     df['clean_text'] = df['combined_text'].apply(preprocess_text)
