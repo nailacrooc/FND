@@ -23,11 +23,12 @@ def run_pipeline(headline, content):
     else:
         label, confidence = predict_others_label(headline, content)
 
-    # Step 3: Return result
     label_str = "Credible" if label == 1 else "Not Credible"
     print(f"[Fake News Detection] Label: {label_str} | Confidence: {confidence:.4f}")
     print("--- FND Pipeline End ---\n")
-    return category, label, confidence
+
+    # Return all 4 for flask to unpack properly
+    return category, cat_confidence, label, confidence
 
 if __name__ == "__main__":
     print("Please enter the news headline:")
