@@ -79,7 +79,7 @@ def train_others_model():
     y_pred = svm.predict(X_test_lda)
     print(f"\n[Others] Accuracy: {accuracy_score(y_test, y_pred):.4f}")
     print("[Others] Classification Report:")
-    print(classification_report(y_test, y_pred, target_names=['Not Credible', 'Credible']))
+    print(classification_report(y_test, y_pred, target_names=['Fake News', 'Real News']))
 
 def load_others_models():
     if not (os.path.exists(TFIDF_FILE) and os.path.exists(LDA_FILE) and os.path.exists(SVM_FILE)):

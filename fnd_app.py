@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from BRIDGE import run_pipeline  # replace with your module name
+from BRIDGE import run_pipeline  # Uses run_pipeline from BRIDGE
 
 app = Flask(__name__)
 
@@ -9,20 +9,21 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    # Get and sanitize user input
     headline = request.form.get("headline", "").strip()
     content = request.form.get("content", "").strip()
 
+    # Validate input
     if not headline or not content:
         return render_template("index.html", error="Please enter both headline and content.")
 
+    # Run the full categorization + fake news detection pipeline
     category, cat_confidence, label, label_confidence = run_pipeline(headline, content)
 
-    # Convert confidences to percentage string rounded to 2 decimals
-    category_conf_pct = f"{cat_confidence * 100:.2f}"
-    fake_conf_pct = f"{label_confidence * 100:.2f}"
-
-    # Convert label to string
-    label_str = "Credible" if label == 1 else "Not Credible"
+    # Format outputs
+    category_conf_pct = f"{cat_confidence * 100:.2f}%"
+    fake_conf_pct = f"{label_confidence * 100:.2f}%"
+    label_str = label
 
     return render_template(
         "index.html",

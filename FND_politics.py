@@ -80,7 +80,7 @@ def train_politics_model():
     y_pred = svm.predict(X_test_lda)
     print(f"\n[Politics] Accuracy: {accuracy_score(y_test, y_pred):.4f}")
     print("[Politics] Classification Report:")
-    print(classification_report(y_test, y_pred, target_names=['Not Credible', 'Credible']))
+    print(classification_report(y_test, y_pred, target_names=['Fake News', 'Real News']))
 
 def load_politics_models():
     # If any pickle file missing, train first
