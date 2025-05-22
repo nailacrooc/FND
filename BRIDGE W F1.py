@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.metrics import classification_report
 from categorizer import predict_from_headline_content
 from FND_politics import predict_politics_label
 from FND_health import predict_health_label
@@ -24,10 +25,9 @@ def run_pipeline(headline, content):
 
 
 def evaluate_csv():
-    input_csv_path = "C:/Users/johnj/ScrapyTest/ScrapyTest/FND-LATEST/FND/TEST SET for bridge.csv"
-    output_csv_path = "C:/Users/johnj/ScrapyTest/ScrapyTest/FND-LATEST/FND/TEST SET for bridge-output.csv"
+    input_csv_path = "C:/Users/johnj/ScrapyTest/ScrapyTest/FND-LATEST/FND/TEST SET for bridge 2.csv"
+    output_csv_path = "C:/Users/johnj/ScrapyTest/ScrapyTest/FND-LATEST/FND/TEST SET for bridge 2-output.csv"
 
-    # Read CSV using ISO-8859-1 encoding
     df = pd.read_csv(input_csv_path, encoding='ISO-8859-1')
 
     success = []
@@ -37,6 +37,9 @@ def evaluate_csv():
         "predicted_label": [],
         "label_confidence": [],
     }
+
+    true_labels = []
+    predicted_labels = []
 
     for _, row in df.iterrows():
         headline = row['Headline']
@@ -54,18 +57,21 @@ def evaluate_csv():
         is_success = (true_category == pred_category) and (true_label == pred_label)
         success.append(is_success)
 
-    # Add results to DataFrame
+        true_labels.append(true_label)
+        predicted_labels.append(pred_label)
+
     for col in predictions:
         df[col] = predictions[col]
     df["success"] = success
 
-    # Save updated CSV
     df.to_csv(output_csv_path, index=False)
-
     print(f"\n✅ Results saved to: {output_csv_path}")
 
     success_rate = sum(success) / len(success)
     print(f"\n📊 Overall Success (category AND label match): {success_rate * 100:.2f}% ({sum(success)} / {len(success)})")
+
+    print("\n📋 Combined Classification Report (All Labels):")
+    print(classification_report(true_labels, predicted_labels, digits=4))
 
 
 if __name__ == "__main__":
